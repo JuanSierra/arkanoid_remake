@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="a78cdc11-27fb-4b8a-b445-17c760a96652" kpf_version="5" name="arkanoid.komodoproject">
+<file id="34375454-cbae-4b1e-b92a-687e1e0ad54b" idref="a78cdc11-27fb-4b8a-b445-17c760a96652" name="preloadjs-0.1.0.min.js" url="lib/preloadjs-0.1.0.min.js">
+</file>
+<file id="42f8af26-111c-45c1-b52f-1e52ed0d1bdb" idref="a78cdc11-27fb-4b8a-b445-17c760a96652" name="soundjs-0.2.0.min.js" url="lib/soundjs-0.2.0.min.js">
+</file>
+<file id="fe5301d9-c8ab-4c19-b8d2-7d5a7e8ad6eb" idref="a78cdc11-27fb-4b8a-b445-17c760a96652" name="easeljs-0.4.1.min.js" url="easeljs-0.4.1.min.js">
+</file>
+</project>

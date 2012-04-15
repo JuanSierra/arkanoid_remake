@@ -1,0 +1,308 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Arkanoid</title>
+    <script src="lib/easeljs-0.4.1.min.js"></script>
+    <script src="src/Paddle.js"></script>
+    <script src="src/Brick.js"></script>
+    <script src="src/Ball.js"></script>
+    <script src="assets/map.js"></script>
+    <script type="text/javascript">
+    
+    var canvas;
+    var stage;
+    var update = true;
+    var currentState = null;
+    var contentManager;
+    var screen_width;
+    var screen_height;
+    var brickImages = [];
+    var bricks;
+    
+    var KEYCODE_SPACE = 32;		
+    var KEYCODE_LEFT = 37;		
+    var KEYCODE_RIGHT = 39;		
+    var MENU_STATE = new MenuState();
+    var PLAY_STATE = new PlayState();
+    document.onkeydown = handleKeyDown;
+    document.onkeyup = handleKeyUp;
+        
+    function MenuState()
+    {
+        this.enter = function()
+        {
+            var text = new Text("Hello World!", "36px Arial", "#777");
+
+            stage.clear();
+            stage.addChild(text);
+            text.x = 360;
+            text.y = 200;    
+        }
+        
+        this.update = function()
+        {    
+            stage.update();
+        }
+        
+        this.exit = function()
+        {
+            
+        }
+    }
+    
+    function PlayState()
+    {
+        var paddle;
+        var ball;
+        
+        var shoot;
+        var left;
+        var right;
+        
+        this.enter = function()
+        {
+            paddle = new Paddle(contentManager.imgPaddle, 0, screen_width);
+            ball = new Ball(contentManager.imgBall, screen_width, screen_height);
+            
+            stage.clear();
+            
+            ball.x = 230;
+            ball.y = 500;
+            drawMap();
+
+            stage.addChild(paddle);
+            stage.addChild(ball);
+        }
+        
+        this.update = function()
+        {
+            for (b in bricks)
+            {
+                bricks[b].tick();
+                
+                if(bricks[b].hitRadius(ball.x, ball.y, ball.r))
+                {
+                    ball.directionY *= -1;
+                    bricks[b].discountHits();
+                    
+                    console.log(bricks[b].remainingHits)
+                    if(bricks[b].remainingHits<0)
+                    {
+                        
+                        stage.removeChild(bricks[b]);
+                    }
+                }
+            }
+            
+            if(this.right)
+            {
+                paddle.direction = 1;
+            }
+            
+            if(this.left)
+            {
+                paddle.direction = -1;
+            }
+            
+            paddle.tick();
+            ball.tick();
+            stage.update();
+        }
+        
+        this.exit = function()
+        {       
+        }
+        
+        this.handleKeyDown = function(e) {
+            if(!e){ var e = window.event; }
+            switch(e.keyCode)
+            {
+                case KEYCODE_SPACE:	this.shoot = true; break;
+                case KEYCODE_LEFT:	this.left = true; break;
+                case KEYCODE_RIGHT: this.right = true; break;
+            }
+        }
+
+        this.handleKeyUp = function(e) {
+            if(!e){ var e = window.event; }
+            switch(e.keyCode)
+            {
+                case KEYCODE_SPACE:	this.shoot = false; break;
+                case KEYCODE_LEFT:	this.left = false; break;
+                case KEYCODE_RIGHT: this.right = false; break;
+            }
+        }
+        
+        var drawMap = function()
+        {
+            var brick;
+            var cont = 0;
+            
+            bricks = new Array();
+            
+            for (var i=0; i<23; i++)
+            {
+                for (var j=0; j<12; j++)
+                {
+                    var v = map.data[j][i];
+                    brick = null;
+                    
+                    if(v=="A")
+                    {
+                        brick = new Brick(contentManager.imgBrickA, 0);                        
+                    }
+                    else if(v=="B")
+                    {
+                        brick = new Brick(contentManager.imgBrickB, 1);                        
+                    }
+                    else if(v=="C")
+                    {
+                        brick = new Brick(contentManager.imgBrickC, 2);                        
+                    }
+                    else if(v=="D")
+                    {
+                        brick = new Brick(contentManager.imgBrickD, -1);                        
+                    }
+                    
+                    if (brick!=null)
+                    {
+                        brick.x = i*50;
+                        brick.y = j*20;
+                        
+                        bricks.push(brick);
+                    }
+                }    
+            }
+            
+            for (b in bricks)
+            {
+                stage.addChild(bricks[b]);
+            }
+        }
+    }
+    
+    function init()
+    {
+        canvas = document.getElementById("arkanoidCanvas");
+	stage = new Stage(canvas);
+        screen_width = canvas.width;
+        screen_height = canvas.height;
+	// add the text as a child of the stage. This means it will be drawn any time the stage is updated
+	// and that it's transformations will be relative to the stage coordinates:
+        contentManager = new ContentManager();
+        contentManager.SetDownloadCompleted(startGame);
+        contentManager.StartDownload();
+    }
+    
+    function startGame()
+    {
+        brickImages["A"] = ContentManager.imgBrickA;
+        brickImages["B"] = ContentManager.imgBrickB;
+        brickImages["C"] = ContentManager.imgBrick;
+        brickImages["D"] = ContentManager.imgBrickD;
+        ChangeState(PLAY_STATE);
+        Ticker.addListener(window);
+        
+        Ticker.useRAF = true;
+        Ticker.setFPS(60);
+    }
+    
+    function tick() {
+	// this set makes it so the stage only re-renders when an event handler indicates a change has happened.
+	if (update) {
+	    //update = false; // only update once
+	    currentState.update();
+	}
+    }
+    
+    function ChangeState(state)
+    {
+        if(currentState)
+        {
+            currentState.exit();
+        }
+        
+        currentState = state;
+        //document.onkeydown = state.handleKeyDown;
+        //document.onkeyup = state.handleKeyUp;
+        currentState.enter();
+    }
+    
+function ContentManager() {
+    // Method called back once all elements
+    // have been downloaded
+    var ondownloadcompleted;
+    // Number of elements to download
+    var NUM_ELEMENTS_TO_DOWNLOAD = 6;
+    
+    // setting the callback method
+    this.SetDownloadCompleted = function (callbackMethod) {
+        ondownloadcompleted = callbackMethod;
+    };
+
+    // We have 4 type of enemies, 1 hero & 1 type of tile
+    this.imgPaddle = new Image();
+    this.imgBrickA = new Image();
+    this.imgBrickB = new Image(); 
+    this.imgBrickC = new Image(); 
+    this.imgBrickD = new Image();
+    this.imgBall = new Image();
+
+    var numImagesLoaded = 0;
+
+    // public method to launch the download process
+    this.StartDownload = function () {
+        SetDownloadParameters(this.imgPaddle, "assets/paddle.png", handleImageLoad, handleImageError);
+        SetDownloadParameters(this.imgBrickA, "assets/a_brick.png", handleImageLoad, handleImageError);
+        SetDownloadParameters(this.imgBrickB, "assets/b_brick.png", handleImageLoad, handleImageError);
+        SetDownloadParameters(this.imgBrickC, "assets/c_brick.png", handleImageLoad, handleImageError);
+        SetDownloadParameters(this.imgBrickD, "assets/d_brick.png", handleImageLoad, handleImageError);
+        SetDownloadParameters(this.imgBall, "assets/ball.png", handleImageLoad, handleImageError);
+    }
+
+    function SetDownloadParameters(imgElement, url, loadedHandler, errorHandler) {
+        imgElement.src = url;
+        imgElement.onload = loadedHandler;
+        imgElement.onerror = errorHandler;
+    }
+
+    // our global handler 
+    function handleImageLoad(e) {
+        numImagesLoaded++
+        // If all elements have been downloaded
+        if (numImagesLoaded == NUM_ELEMENTS_TO_DOWNLOAD) {
+            numImagesLoaded = 0;
+            // we're calling back the method set by SetDownloadCompleted
+            ondownloadcompleted();
+        }
+    }
+
+    //called if there is an error loading the image (usually due to a 404)
+    function handleImageError(e) {
+        console.log("Error Loading Image : " + e.target.src);
+        }
+    }
+
+    function handleKeyDown(e) {
+            if(currentState != null){
+                currentState.handleKeyDown(e);
+            }
+        }
+
+    function handleKeyUp(e) {
+            if(currentState != null){
+                currentState.handleKeyUp(e);
+            }
+        }
+    </script>
+</head>
+
+<body onload="init();">
+
+<canvas id="arkanoidCanvas" width="460" height="600">
+    
+</canvas>
+</body>
+</html>
